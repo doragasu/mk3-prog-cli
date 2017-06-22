@@ -1,0 +1,4 @@
+<map id="Cmd" name="Cmd">
+<area shape="rect" id="node2" href="$struct_cmd_rd_wr_hdr.html" title="Command header for memory read and write commands. " alt="" coords="5,5,107,32"/>
+<area shape="rect" id="node3" href="$struct_cmd_erase.html" title="Command header for erase commands. " alt="" coords="131,5,213,32"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="main.c" name="main.c">
+<area shape="rect" id="node2" href="$util_8h.html" title="General purpose utiities. " alt="" coords="1063,155,1113,181"/>
+<area shape="rect" id="node13" href="$progbar_8h.html" title="Draw progress bars for command line applications. " alt="" coords="856,80,931,107"/>
+<area shape="rect" id="node14" href="$cmd_8h.html" title="Allows sending commands to the programmer, and receiving results. " alt="" coords="5,80,64,107"/>
+<area shape="rect" id="node15" href="$avrflash_8h.html" title="Flashes elf files to programmer MCU or cart CIC. " alt="" coords="1126,80,1205,107"/>
+<area shape="rect" id="node16" href="$latticeflash_8h.html" title="Flash specified xcf file to FPGA. " alt="" coords="955,80,1051,107"/>
+</map>

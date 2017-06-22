@@ -1,0 +1,6 @@
+<map id="CmdRep" name="CmdRep">
+<area shape="rect" id="node2" href="$struct_cmd_rep_fw_ver.html" title="Firmware version command response. " alt="" coords="5,109,113,136"/>
+<area shape="rect" id="node3" href="$struct_cmd_rep_empty.html" title="Empty command response. " alt="" coords="137,109,248,136"/>
+<area shape="rect" id="node4" href="$struct_cmd_rep_flash_id.html" title="Flash ID command response. " alt="" coords="273,109,387,136"/>
+<area shape="rect" id="node5" href="$struct_cmd_flash_id.html" title="Flash chip identification information. " alt="" coords="284,5,376,32"/>
+</map>

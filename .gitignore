@@ -1,0 +1,10 @@
+mk3-prog
+obj/*
+*.vim
+*.pyc
+tags
+test/*
+*.swp
+doc/latex
+*.bin
+

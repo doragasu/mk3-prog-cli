@@ -1,0 +1,9 @@
+<map id="util.h" name="util.h">
+<area shape="rect" id="node2" href="$avrflash_8h.html" title="Flashes elf files to programmer MCU or cart CIC. " alt="" coords="13,80,92,107"/>
+<area shape="rect" id="node4" href="$main_8c.html" title="Command Line Interface for the mojo&#45;nes&#45;mk3 programmer. " alt="" coords="109,155,170,181"/>
+<area shape="rect" id="node5" href="$cmd_8c.html" title="Allows sending commands to the programmer, and receiving results. " alt="" coords="167,80,226,107"/>
+<area shape="rect" id="node6" href="$latticeflash_8h.html" title="Flash specified xcf file to FPGA. " alt="" coords="250,80,346,107"/>
+<area shape="rect" id="node8" href="$spi-com_8c.html" title="Handles SPI and framing for communications. " alt="" coords="371,80,449,107"/>
+<area shape="rect" id="node3" href="$avrflash_8c.html" title="Flashes elf files to programmer MCU or cart CIC. " alt="" coords="5,155,84,181"/>
+<area shape="rect" id="node7" href="$latticeflash_8c.html" title="Flash specified xcf file to FPGA. " alt="" coords="250,155,346,181"/>
+</map>
