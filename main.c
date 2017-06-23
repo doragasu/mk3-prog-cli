@@ -11,12 +11,6 @@
  * and RAM chips. A driver system allows to support several mapper chip
  * implementations.
  *
- * \todo
- * - Currently programmer configuration file and programmer type are
- *   harcoded inside the binary. It would be advisable to read them as a
- *   command line switch, or from a configuration file, or from an environment
- *   variable.
- *
  * \author Jesus Alonso (doragasu)
  * \date   2016
  ****************************************************************************/
