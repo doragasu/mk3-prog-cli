@@ -5,14 +5,22 @@ This utility allows to manage mojo-nes-mk3 cartridges, using a mojo-nes-mk3 prog
 
 
 # Building
-You will need a working GNU GCC compiler and an Awesome Mojo-NES MKIII programmer to burn the ROM to a MegaWiFi cartridge. You will also need to install `libftdi` and `libmpsse` libraries, including development headers. Once you have your development environment properly installed, the makefile should do all the hard work for you. Just browse the Makefile to suit it to your dev environment and type:
+You will need a working GNU GCC compiler and an Awesome Mojo-NES MKIII programmer to burn the ROM to a Mojo-NES MKIII cartridge. You will also need to install `libftdi`, `libmpsse` and `glib` libraries, including development headers. If you are a Linux user, you most likely have `glib` installed (it is a common Gnome library), and can install `libftdi` from your distro repositories. If your distro does not come with `libmpsse`, you can grab it from [here](https://github.com/devttys0/libmpsse). Note this is *not* the privative library available from FTDI, but an open source alternative.
+
+If you are planning to program the CIC chip inside the cartridge, or to update the programmer firmware, you will also need to install `avrdude`. And if you are planning to program the FPGA inside the cartridge, you will have to install [Lattice Diamond](http://www.latticesemi.com/latticediamond) or [Lattice Programmer](http://www.latticesemi.com/en/Products/DesignSoftwareAndIP/ProgrammingAndConfigurationSw/Programmer.aspx).
+
+Once you have your development environment properly installed, `make` should do all the hard work for you. Just browse the `Makefile` to suit it to your dev environment. Then build  and install the program:
 ```
 $ make
+$ sudo make install
 ```
-The mk3-prog program should be built, sitting in the working directory, ready to use.
+The mk3-prog program should be installed in your system, along with the configuration files.
 
 # Usage
-Once you have plugged a Mojo-NES MKIII cartridge into an Awesome Mojo-NES MKIII Programmer, you can use mk3-prog. The command line application invocation must be as follows:
+Once you have plugged a Mojo-NES MKIII cartridge into an Awesome Mojo-NES MKIII Programmer, you can use mk3-prog to burn some ROMs. Please have in mind that currently the programmer does not support .nes files. You will have to extract the CHR and PRG ROMs from them, using a tool such as [ReadNES3](https://github.com/AaronBottegal/ReadNES3).
+
+## Command line invocation
+The command line application invocation must be as follows:
 ```
 $ mk3-prog [option1 [option1_arg]] […] [optionN [optionN_arg]]
 ```
@@ -54,8 +62,38 @@ Some examples of the command invocation and its arguments are:
 * `$ mk3-prog -Vp prg_rom_file:0x10000:32768` → Flashes 32 KiB of prg_rom_file to address 0x10000, and verifies the operation.
 * `$ mk3-prog --read_chr chr_rom_file::1048576` → Reads 1 MiB of the CHR flash chip, and writes it to chr_rom_file. Note that if you want to specify length but do not want to specify address, you have to use two colon characters before length. This way, missing address argument is interpreted as 0.
 
+## Configuration file customization
+This tool reads a config file, installed at `/etc/mk3-prog.cfg`, to extract some parameters, such as the install location of tools like e.g. avrdude. The configuration file is reproduced below, with a comment documenting each parameter. Most likely the only ones that need to be modified are the ones dealing with paths:
+
+```Ini
+# Default Awesome Mojo-NES MKIII programmer configuration
+
+[MPSSE]
+# Default MPSSE interface number
+ifnum = 2
+
+[LATTICE_PROGRAMMER]
+# Path of the lattice programmer tool
+path = /usr/local/diamond/3.7_x64/bin/lin64/pgrcmd
+
+
+[AVRDUDE]
+# Path of the avrdude tool
+path = /usr/bin/avrdude
+# Avrdude configuration file containing the MCU and CIC configurations
+conf = /usr/share/mk3prog/mk3prog.conf
+# Programmer microcontroller definition
+chip_mcu = m8515
+# Configuration for flashing the programmer MCU
+prog_mcu = mk3prog-mcu
+# CIC microcontroller definition
+chip_cic = t13
+# Configuration for flashing the cartridge CIC
+prog_cic = mk3prog-cic
+```
+
 # Authors
-This program has been written by doragasu.
+This program has been written by doragasu. You can find me on Twitter at @@doragasu.
 
 # Contributions
 Contributions are welcome. If you find a bug please open an issue, and if you have implemented a cool feature/improvement, please send a pull request.
