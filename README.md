@@ -21,29 +21,29 @@ The options (option1 ~ optionN) can be any combination of the ones listed below.
 | Option | Description |
 |---|---|
 | -f, --firm-ver | Get programmer firmware version |
-| -c, --flash-chr <arg> | Flash file to CHR ROM |
-| -p, --flash-prg <arg> | Flash file to PRG ROM |
-| -C, --read-chr <arg> | Read CHR ROM to file |
-| -P, --read-prg <arg> | Read PRG ROM to file |
+| -c, --flash-chr \<arg\> | Flash file to CHR ROM |
+| -p, --flash-prg \<arg\> | Flash file to PRG ROM |
+| -C, --read-chr \<arg\> | Read CHR ROM to file |
+| -P, --read-prg \<arg\> | Read PRG ROM to file |
 | -e, --erase-chr | Erase CHR Flash |
 | -E, --erase-prg | Erase PRG Flash |
-| -s, --chr-sec-er <arg> | Erase CHR flash sector |
-| -S, --prg-sec-er <arg> | Erase PRG flash sector |
+| -s, --chr-sec-er \<arg\> | Erase CHR flash sector |
+| -S, --prg-sec-er \<arg\> | Erase PRG flash sector |
 | -V, --verify | Verify flash after writing file |
 | -i, --flash-id | Obtain flash chips identifiers |
-| -R, --read-ram <arg> | Read data from RAM chip |
-| -W, --write-ram <arg> | Write data to RAM chip |
-| -b, --fpga-flash <arg> | Upload bitfile to FPGA, using .xcf file |
-| -a, --cic-flash <arg> | AVR CIC firmware flash |
-| -F, --firm-flash <arg> | Flash programmer firmware |
-| -m, --mpsse-if <arg> | Set MPSSE interface number |
-| -M, --mapper <arg> | Set mapper: 1-NOROM, 2-MMC3, 3-NFROM |
+| -R, --read-ram \<arg\> | Read data from RAM chip |
+| -W, --write-ram \<arg\> | Write data to RAM chip |
+| -b, --fpga-flash \<arg\> | Upload bitfile to FPGA, using .xcf file |
+| -a, --cic-flash \<arg\> | AVR CIC firmware flash |
+| -F, --firm-flash \<arg\> | Flash programmer firmware |
+| -m, --mpsse-if \<arg\> | Set MPSSE interface number |
+| -M, --mapper \<arg\> | Set mapper: 1-NOROM, 2-MMC3, 3-NFROM |
 | -d, --dry-run | Dry run: don't actually do anything |
 | -r, --version | Show program version |
 | -v, --verbose | Show additional information |
 | -h, --help | Print help screen and exit |
 
-The <arg> text indicates that the option takes an input argument. For the options requiring an argument that represents a memory image file, or a memory address, the syntax is as follows:
+The \<arg\> text indicates that the option takes an input argument. For the options requiring an argument that represents a memory image file, or a memory address, the syntax is as follows:
 * Memory image file: file_name[:start_addr[:length]]. Along with the file name, optional address and length fields can be added, separated by the colon (:) character, resulting in the following format:
 * Address: Specifies an address related to the command (e.g. the address to which to flash a cartridge ROM or WiFi firmware blob).
 
