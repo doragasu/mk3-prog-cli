@@ -81,7 +81,7 @@ path = /usr/local/diamond/3.7_x64/bin/lin64/pgrcmd
 # Path of the avrdude tool
 path = /usr/bin/avrdude
 # Avrdude configuration file containing the MCU and CIC configurations
-conf = /usr/share/mk3prog/mk3prog.conf
+conf = /usr/share/mk3-prog/mk3prog.conf
 # Programmer microcontroller definition
 chip_mcu = m8515
 # Configuration for flashing the programmer MCU
@@ -93,7 +93,7 @@ prog_cic = mk3prog-cic
 ```
 
 # Authors
-This program has been written by doragasu. You can find me on Twitter at @@doragasu.
+This program has been written by doragasu. You can find me on Twitter at \@doragasu.
 
 # Contributions
 Contributions are welcome. If you find a bug please open an issue, and if you have implemented a cool feature/improvement, please send a pull request.

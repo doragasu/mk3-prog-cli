@@ -17,7 +17,7 @@ all: $(TARGET)
 install: $(TARGET)
 	$(INSTALL) -s -m 755 $(TARGET) $(DESTDIR)/bin/
 	$(INSTALL) -m 644 mk3-prog.cfg /etc/
-	$(INSTALL) -D -m 644 -t $(DESTDIR)/share/mk3-conf/ mk3prog.conf
+	$(INSTALL) -D -m 644 -t $(DESTDIR)/share/mk3-prog/ mk3prog.conf
 
 $(TARGET): $(OBJECTS)
 	$(PREFIX)$(CC) -o $(TARGET) $(OBJECTS) $(LFLAGS)
