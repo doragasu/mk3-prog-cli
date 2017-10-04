@@ -32,7 +32,7 @@
 #include <glib.h>
 
 #include "progbar.h"
-#include "cmd.h"
+#include "cmd-usb.h"
 #include "avrflash.h"
 #include "latticeflash.h"
 

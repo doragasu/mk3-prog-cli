@@ -14,6 +14,35 @@
 
 #include <stdint.h>
 
+
+/// Vendor ID of the device to open
+#define CMD_VID     				0x03EB
+/// Peripheral ID of the device to open
+#define CMD_PID     				0x206C
+
+/// Bootloader Vendor ID
+#define CMD_BOOT_VID    			0x03EB
+/// Bootloader Peripheral ID
+#define CMD_BOOT_PID    			0x2FF9
+
+/// Device IN endpoint
+#define CMD_ENDPOINT_IN        		0x83
+/// Device OUT endpoint
+#define CMD_ENDPOINT_OUT       		0x04
+
+/// USB configuration command
+#define CMD_CONFIG             		1
+/// USB interface command
+#define CMD_INTERF             		0
+
+/// USB endpoint length
+#define CMD_ENDPOINT_LEN			64
+
+/// Maximum USB transfer length.
+/// Can be up to 512 bytes, but it looks like 384 is the
+/// optimum value to maximize speed
+#define CMD_MAX_USB_TRANSFER_LEN	384
+
 /** \addtogroup CmdRet
  *  \brief Return values for functions in this module and error codes.
  *  \{ */
@@ -22,7 +51,7 @@
 /** \} */
 
 /// Maximum length of a command
-#define CMD_MAXLEN	32
+#define CMD_MAXLEN			CMD_ENDPOINT_LEN
 
 /// Maximum SRAM length is 8 KiB
 #define CMD_SRAM_MAXLEN		8*1024
@@ -122,13 +151,14 @@ int CmdInit(unsigned int channel);
  *
  * \param[in]  cmd Command to send.
  * \param[in]  cmdLen Command length.
- * \param[out] rep Response to the sent command.
+ * \param[out] rep Command reply
+ * \param[in]  tout Timeout for the command send/receive operations (ms).
  *
- * \return CMD_OK if the command completed successfully. CMD_ERROR otherwise.
+ * \return Received bytes on success. CMD_ERROR otherwise.
  * \note This function does not allow sending or receiving commands with long
  * payloads. Use CmdSendLongCmd() or CmdSendLongRep() for long payloads.
  ****************************************************************************/
-int CmdSend(const Cmd *cmd, uint8_t cmdLen, CmdRep **rep);
+int CmdSend(const Cmd *cmd, uint8_t cmdLen, CmdRep **rep, unsigned int tout);
 
 /************************************************************************//**
  * Sends a command with a long data payload, and obtains the command response.
@@ -138,11 +168,14 @@ int CmdSend(const Cmd *cmd, uint8_t cmdLen, CmdRep **rep);
  * \param[in]  data Long data payload to send.
  * \param[in]  dataLen Length of the data payload.
  * \param[out] rep Response to the sent command.
+ * \param[in]  tout Timeout for the command send/receive operations (ms).
  *
  * \return CMD_OK if the command completed successfully. CMD_ERROR otherwise.
+ * \note This function does not allow sending or receiving commands with long
+ * payloads. Use CmdSendLongCmd() or CmdSendLongRep() for long payloads.
  ****************************************************************************/
 int CmdSendLongCmd(const Cmd *cmd, uint8_t cmdLen, const uint8_t *data,
-				   int dataLen, CmdRep **rep);
+				   int dataLen, CmdRep **rep, unsigned int tout);
 
 /************************************************************************//**
  * Sends a command requiring a long response payload.
@@ -152,11 +185,12 @@ int CmdSendLongCmd(const Cmd *cmd, uint8_t cmdLen, const uint8_t *data,
  * \param[out] rep Response to the sent command.
  * \param[in]  data Long data payload to receive.
  * \param[in]  recvLen Length of payload to receive.
+ * \param[in]  tout Timeout for the command send/receive operations (ms).
  *
  * \return Length of the received payload if OK, CMD_ERROR otherwise.
  ****************************************************************************/
 int CmdSendLongRep(const Cmd *cmd, uint8_t cmdLen, CmdRep **rep,
-				   uint8_t *data, int recvLen);
+				   uint8_t *data, int recvLen, unsigned int tout);
 
 /// It looks like libmpsse does NOT free returned responses (it is at least
 /// NOT documented), so we must free the memory on our own. As this can change
