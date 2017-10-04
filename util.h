@@ -47,9 +47,6 @@
 /// printf-like macro that writes to stderr instead of stdout
 #define PrintErr(...)	do{fprintf(stderr, __VA_ARGS__);}while(0)
 
-/// Prints text only if (verbose==TRUE)
-#define PrintVerb(...)	do{if(f.verbose)printf(__VA_ARGS__);}while(0)
-
 // Delay ms function, compatible with both Windows and Unix
 #ifdef __OS_WIN
 /// Delay the specified amount of milliseconds.

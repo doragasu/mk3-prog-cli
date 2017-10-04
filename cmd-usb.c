@@ -9,7 +9,6 @@
 #include <string.h>
 #include <stdio.h>		// Just for debugging
 #include <stdlib.h>
-#include "spi-com.h"
 #include <libusb-1.0/libusb.h>
 #include "util.h"
 

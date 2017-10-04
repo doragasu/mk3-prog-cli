@@ -39,10 +39,16 @@
 /// Major version of the program
 #define VERSION_MAJOR	0x00
 /// Minor version of the program
-#define VERSION_MINOR	0x04
+#define VERSION_MINOR	0x05
 
 /// Maximum file length
 #define MAX_FILELEN		255
+
+/// Timeouts for fast commands
+#define TOUT_FAST		1000
+
+/// Timeouts for slow commands
+#define TOUT_SLOW		50000
 
 /** \addtogroup ProgChips
  *  \brief Programmable flash chips
@@ -321,7 +327,7 @@ static int ProgFwGet(void) {
 
 	cmd.command = CMD_FW_VER;
 
-	if (CmdSend(&cmd, 1, &rep) < 0) return -1;
+	if (CmdSend(&cmd, 1, &rep, TOUT_FAST) < 0) return -1;
 
 	printf("Awesome MOJO-NES programmer firmware: %d.%d\n",
 			rep->fwVer.ver_major, rep->fwVer.ver_minor);
@@ -340,7 +346,7 @@ static int ProgFIdGet(void) {
 
 	cmd.command = CMD_FLASH_ID;
 
-	if (CmdSend(&cmd, 1, &rep) < 0) return -1;
+	if (CmdSend(&cmd, 1, &rep, TOUT_FAST) < 0) return -1;
 
 	printf("CHR --> ManID: 0x%02X. DevID: 0x%02X:%02X:%02X\n", rep->fId.chr.manId,
 			rep->fId.chr.devId[0], rep->fId.chr.devId[1],
@@ -367,7 +373,7 @@ static int ProgFlashErase(uint8_t chip, uint32_t addr) {
 	cmd.rdWr.cmd = CMD_CHR_ERASE + chip;
 	CMD_SET_ADDR(cmd.rdWr.addr, addr);
 
-	if (CmdSend(&cmd, 4, &rep) < 0) return -1;
+	if (CmdSend(&cmd, 4, &rep, TOUT_SLOW) < 0) return -1;
 	CmdRepFree(rep);
 	return 0;
 }
@@ -438,8 +444,8 @@ static uint8_t *AllocAndFlash(uint8_t chip, MemImage *f, unsigned int cols) {
 		toWrite = MIN(32768, f->len - i);
 		CMD_SET_ADDR(cmd.rdWr.addr, addr);
 		CMD_SET_LEN(cmd.rdWr.len, toWrite);
-		if ((CmdSendLongCmd(&cmd, sizeof(CmdRdWrHdr), writeBuf + i,
-				toWrite, &rep) != CMD_OK) || (rep->command != CMD_OK)) {
+		if ((CmdSendLongCmd(&cmd, sizeof(CmdRdWrHdr), writeBuf + i, toWrite,
+				&rep, TOUT_FAST) != CMD_OK) || (rep->command != CMD_OK)) {
 			PrintErr("CMD response: %d. Couldn't write to cart!\n",
 					rep->command);
 			if (rep) CmdRepFree(rep);
@@ -500,7 +506,7 @@ uint8_t *AllocAndRead(uint8_t chip, MemImage *f, unsigned int cols) {
 		CMD_SET_ADDR(cmd.rdWr.addr, addr);
 		CMD_SET_LEN(cmd.rdWr.len, toRead);
 		if ((CmdSendLongRep(&cmd, sizeof(CmdRdWrHdr), &rep, readBuf + i,
-				toRead) != toRead) || (rep->command != CMD_OK)) {
+				toRead, TOUT_FAST) != toRead) || (rep->command != CMD_OK)) {
 			PrintErr("CMD response: %d. Couldn't read from cart!\n", rep->command);
 			if (rep) CmdRepFree(rep);
 			free(readBuf);
@@ -575,8 +581,8 @@ uint8_t *AllocAndRamWrite(MemImage *f) {
 	cmd.rdWr.cmd = CMD_RAM_WRITE;
 	CMD_SET_ADDR(cmd.rdWr.addr, f->addr - PROG_SRAM_BASE);
 	CMD_SET_LEN(cmd.rdWr.len, f->len);
-	if ((CmdSendLongCmd(&cmd, sizeof(CmdRdWrHdr), writeBuf,
-			f->len, &rep) != f->len) || (rep->command != CMD_OK)) {
+	if ((CmdSendLongCmd(&cmd, sizeof(CmdRdWrHdr), writeBuf, f->len,
+			&rep, TOUT_FAST) != f->len) || (rep->command != CMD_OK)) {
 		if (rep) CmdRepFree(rep);
 		free(writeBuf);
 		PrintErr("Couldn't write to cart!\n");
@@ -623,8 +629,8 @@ uint8_t *AllocAndRamRead(MemImage *f) {
 	cmd.rdWr.cmd = CMD_RAM_READ;
 	CMD_SET_ADDR(cmd.rdWr.addr, f->addr - PROG_SRAM_BASE);
 	CMD_SET_LEN(cmd.rdWr.len, f->len);
-	if ((CmdSendLongRep(&cmd, sizeof(CmdRdWrHdr), &rep, readBuf,
-			f->len) != f->len) || (rep->command != CMD_OK)) {
+	if ((CmdSendLongRep(&cmd, sizeof(CmdRdWrHdr), &rep, readBuf, f->len,
+			TOUT_FAST) != f->len) || (rep->command != CMD_OK)) {
 		PrintErr("CMD response: %d. Couldn't read from cart!\n", rep->command);
 		if (rep) CmdRepFree(rep);
 		free(readBuf);
@@ -648,7 +654,7 @@ int CmdMapperCfg(CmdMapper mapper) {
 
 	cmd.command = CMD_MAPPER_SET;
 	cmd.data[1] = mapper;
-	if (CmdSend(&cmd, 2, &rep) < 0) return -1;
+	if (CmdSend(&cmd, 2, &rep, TOUT_FAST) < 0) return -1;
 
 	return 0;
 }
