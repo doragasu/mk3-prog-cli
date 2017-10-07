@@ -59,19 +59,21 @@
 /** \addtogroup Cmds
  *  \brief Supported system commands. Also includes OK and ERROR codes.
  *  \{ */
-#define CMD_REP_OK		  0	///< OK reply code
-#define CMD_FW_VER        1 ///< Get programmer firmware version
-#define CMD_CHR_WRITE	  2 ///< Write to CHR flash
-#define CMD_PRG_WRITE	  3 ///< Write to PRG flash
-#define CMD_CHR_READ	  4 ///< Read from CHR flash
-#define CMD_PRG_READ	  5 ///< Read from PRG flash
-#define CMD_CHR_ERASE	  6 ///< Erase CHR flash (entire or sectors)
-#define CMD_PRG_ERASE	  7 ///< Erase PRG flash (entire or sectors)
-#define CMD_FLASH_ID	  8 ///< Get flash chips identifiers
-#define CMD_RAM_WRITE     9 ///< Write data to cartridge SRAM
-#define CMD_RAM_READ	 10 ///< Read data from cartridge SRAM
-#define CMD_MAPPER_SET	 11 ///< Configure cartridge mapper
-#define CMD_REP_ERROR	255	///< Error reply code
+#define CMD_REP_OK		      0	///< OK reply code
+#define CMD_FW_VER            1 ///< Get programmer firmware version
+#define CMD_CHR_WRITE	      2 ///< Write to CHR flash
+#define CMD_PRG_WRITE	      3 ///< Write to PRG flash
+#define CMD_CHR_READ	      4 ///< Read from CHR flash
+#define CMD_PRG_READ	      5 ///< Read from PRG flash
+#define CMD_CHR_ERASE	      6 ///< Erase CHR flash (entire or sectors)
+#define CMD_PRG_ERASE	      7 ///< Erase PRG flash (entire or sectors)
+#define CMD_FLASH_ID	      8 ///< Get flash chips identifiers
+#define CMD_RAM_WRITE         9 ///< Write data to cartridge SRAM
+#define CMD_RAM_READ	     10 ///< Read data from cartridge SRAM
+#define CMD_MAPPER_SET	     11 ///< Configure cartridge mapper
+#define CMD_CHR_RANGE_ERASE	 12 ///< Erase flash chip memory range
+#define CMD_PRG_RANGE_ERASE	 13 ///< Erase flash chip memory range
+#define CMD_REP_ERROR	    255	///< Error reply code
 /** \} */
 
 /// Supported mappers.
@@ -93,12 +95,21 @@ typedef struct {
 	uint8_t sectAddr[3];	///< Address to erase, Full chip if 0xFFFFFF
 } CmdErase;
 
+/// Command header for range erase commands.
+typedef struct {
+	uint8_t cmd;			///< Command code
+	uint8_t start[3];		///< Start address
+	uint8_t length[3];		///< Length of the memory range
+	uint8_t pad;			///< padding
+} CmdRangeErase;
+
 /// Generic command request.
 typedef union {
 	uint8_t data[CMD_MAXLEN];	///< Raw data (32 bytes max)
 	uint8_t command;			///< Command code
 	CmdRdWrHdr rdWr;			///< Read/write request
 	CmdErase erase;				///< Erase request
+	CmdRangeErase rangeErase;	///< Range erase request
 } Cmd;
 
 /// Flash chip identification information.
@@ -158,7 +169,7 @@ int CmdInit(unsigned int channel);
  * \note This function does not allow sending or receiving commands with long
  * payloads. Use CmdSendLongCmd() or CmdSendLongRep() for long payloads.
  ****************************************************************************/
-int CmdSend(const Cmd *cmd, uint8_t cmdLen, CmdRep **rep, unsigned int tout);
+int CmdSend(const Cmd *cmd, uint8_t cmdLen, CmdRep *rep, unsigned int tout);
 
 /************************************************************************//**
  * Sends a command with a long data payload, and obtains the command response.
@@ -175,7 +186,7 @@ int CmdSend(const Cmd *cmd, uint8_t cmdLen, CmdRep **rep, unsigned int tout);
  * payloads. Use CmdSendLongCmd() or CmdSendLongRep() for long payloads.
  ****************************************************************************/
 int CmdSendLongCmd(const Cmd *cmd, uint8_t cmdLen, const uint8_t *data,
-				   int dataLen, CmdRep **rep, unsigned int tout);
+				   int dataLen, CmdRep *rep, unsigned int tout);
 
 /************************************************************************//**
  * Sends a command requiring a long response payload.
@@ -189,7 +200,7 @@ int CmdSendLongCmd(const Cmd *cmd, uint8_t cmdLen, const uint8_t *data,
  *
  * \return Length of the received payload if OK, CMD_ERROR otherwise.
  ****************************************************************************/
-int CmdSendLongRep(const Cmd *cmd, uint8_t cmdLen, CmdRep **rep,
+int CmdSendLongRep(const Cmd *cmd, uint8_t cmdLen, CmdRep *rep,
 				   uint8_t *data, int recvLen, unsigned int tout);
 
 /// It looks like libmpsse does NOT free returned responses (it is at least

@@ -122,6 +122,7 @@ typedef union {
 		uint8_t flashId:1;		///< Get flash chip IDs
 		uint8_t chrErase:1;		///< Erase CHR flash
 		uint8_t prgErase:1;		///< Erase PRG flash
+		uint8_t autoErase:1;	///< Auto erase
 		uint8_t dry:1;			///< Dry run
 	};
 } Flags;
@@ -141,6 +142,7 @@ const static struct option opt[] = {
         {"erase-prg",   no_argument,        NULL,   'E'},
         {"chr-sec-er",  required_argument,  NULL,   's'},
         {"prg-sec-er",  required_argument,  NULL,   'S'},
+		{"auto-erase",  no_argument,		NULL,	'A'},
         {"verify",      no_argument,        NULL,   'V'},
         {"flash-id",    no_argument,        NULL,   'i'},
 		{"read-ram",	required_argument,  NULL,	'R'},
@@ -323,15 +325,14 @@ static void PrintMemError(int code) {
  ****************************************************************************/
 static int ProgFwGet(void) {
 	Cmd cmd;
-	CmdRep *rep;
+	CmdRep rep;
 
 	cmd.command = CMD_FW_VER;
 
 	if (CmdSend(&cmd, 1, &rep, TOUT_FAST) < 0) return -1;
 
 	printf("Awesome MOJO-NES programmer firmware: %d.%d\n",
-			rep->fwVer.ver_major, rep->fwVer.ver_minor);
-	CmdRepFree(rep);
+			rep.fwVer.ver_major, rep.fwVer.ver_minor);
 	return 0;
 }
 
@@ -342,19 +343,18 @@ static int ProgFwGet(void) {
  ****************************************************************************/
 static int ProgFIdGet(void) {
 	Cmd cmd;
-	CmdRep *rep;
+	CmdRep rep;
 
 	cmd.command = CMD_FLASH_ID;
 
 	if (CmdSend(&cmd, 1, &rep, TOUT_FAST) < 0) return -1;
 
-	printf("CHR --> ManID: 0x%02X. DevID: 0x%02X:%02X:%02X\n", rep->fId.chr.manId,
-			rep->fId.chr.devId[0], rep->fId.chr.devId[1],
-			rep->fId.chr.devId[2]);
-	printf("PRG --> ManID: 0x%02X. DevID: 0x%02X:%02X:%02X\n", rep->fId.prg.manId,
-			rep->fId.prg.devId[0], rep->fId.prg.devId[1],
-			rep->fId.prg.devId[2]);
-	CmdRepFree(rep);
+	printf("CHR --> ManID: 0x%02X. DevID: 0x%02X:%02X:%02X\n", rep.fId.chr.manId,
+			rep.fId.chr.devId[0], rep.fId.chr.devId[1],
+			rep.fId.chr.devId[2]);
+	printf("PRG --> ManID: 0x%02X. De.D: 0x%02X:%02X:%02X\n", rep.fId.prg.manId,
+			rep.fId.prg.devId[0], rep.fId.prg.devId[1],
+			rep.fId.prg.devId[2]);
 	return 0;
 }
 
@@ -368,14 +368,40 @@ static int ProgFIdGet(void) {
  ****************************************************************************/
 static int ProgFlashErase(uint8_t chip, uint32_t addr) {
 	Cmd cmd;
-	CmdRep *rep;
+	CmdRep rep;
 
 	cmd.rdWr.cmd = CMD_CHR_ERASE + chip;
 	CMD_SET_ADDR(cmd.rdWr.addr, addr);
 
 	if (CmdSend(&cmd, 4, &rep, TOUT_SLOW) < 0) return -1;
-	CmdRepFree(rep);
 	return 0;
+}
+
+/************************************************************************//**
+ * Erases memory range from the specified flash chip.
+ *
+ * \param[in] chip  Flash chip to erase.
+ * \param[in] start Start address of the range to erase.
+ * \param[in] len   Length of the memory range to erase.
+ *
+ * \return 0 on success, less than 0 on error.
+ ****************************************************************************/
+static int ProgRangeErase(uint8_t chip, uint32_t start, uint32_t len) {
+	Cmd cmd;
+	CmdRep rep;
+
+	cmd.command = CMD_CHR_RANGE_ERASE + chip;
+	cmd.rangeErase.start[0] = start>>16;
+	cmd.rangeErase.start[1] = start>>8;
+	cmd.rangeErase.start[2] = start;
+
+	cmd.rangeErase.length[0] = len>>16;
+	cmd.rangeErase.length[1] = len>>8;
+	cmd.rangeErase.length[2] = len;
+
+	cmd.rangeErase.pad = 0;
+
+	return CmdSend(&cmd, sizeof(CmdRangeErase), &rep, TOUT_SLOW);
 }
 
 /************************************************************************//**
@@ -392,15 +418,18 @@ static int ProgFlashErase(uint8_t chip, uint32_t addr) {
  *
  * \warning Buffer must be externally deallocated when no longer needed,
  *          using free().
+ *
+ * \todo auto-erase implementation
  ****************************************************************************/
-static uint8_t *AllocAndFlash(uint8_t chip, MemImage *f, unsigned int cols) {
+static uint8_t *AllocAndFlash(uint8_t chip, MemImage *f, int autoErase,
+		unsigned int cols) {
     FILE *rom;
 	uint8_t *writeBuf;
 	uint32_t addr;
 	int toWrite;
 	uint32_t i;
 	Cmd cmd;
-	CmdRep *rep = NULL;
+	CmdRep rep;
 
 	// Address string, e.g.: 0x123456
 	char addrStr[9];
@@ -435,6 +464,17 @@ static uint8_t *AllocAndFlash(uint8_t chip, MemImage *f, unsigned int cols) {
 	}
 	fclose(rom);
 
+	if (autoErase) {
+		printf("Auto-erasing range 0x%06X:%06X... ", f->addr, f->len);
+		fflush(stdout);
+		if (ProgRangeErase(chip, f->addr, f->len)) {
+			free(writeBuf);
+			PrintErr("Auto-erase failed!\n");
+			return NULL;
+		}
+		printf("OK!\n");
+	 }
+
    	printf("Flashing %s ROM %s starting at 0x%06X...\n", chip?"PRG":"CHR",
 			f->file, f->addr);
 
@@ -445,14 +485,12 @@ static uint8_t *AllocAndFlash(uint8_t chip, MemImage *f, unsigned int cols) {
 		CMD_SET_ADDR(cmd.rdWr.addr, addr);
 		CMD_SET_LEN(cmd.rdWr.len, toWrite);
 		if ((CmdSendLongCmd(&cmd, sizeof(CmdRdWrHdr), writeBuf + i, toWrite,
-				&rep, TOUT_FAST) != CMD_OK) || (rep->command != CMD_OK)) {
+				&rep, TOUT_FAST) != CMD_OK) || (rep.command != CMD_OK)) {
 			PrintErr("CMD response: %d. Couldn't write to cart!\n",
-					rep->command);
-			if (rep) CmdRepFree(rep);
+					rep.command);
 			free(writeBuf);
 			return NULL;
 		}
-		CmdRepFree(rep);
 		// Update vars and draw progress bar
 		i += toWrite;
 		addr += toWrite;
@@ -487,7 +525,7 @@ uint8_t *AllocAndRead(uint8_t chip, MemImage *f, unsigned int cols) {
 	// Address string, e.g.: 0x123456
 	char addrStr[9];
 	Cmd cmd;
-	CmdRep *rep = NULL;
+	CmdRep rep;
 
 	if (chip > PROG_CHIP_MAX) return NULL;
 
@@ -506,13 +544,11 @@ uint8_t *AllocAndRead(uint8_t chip, MemImage *f, unsigned int cols) {
 		CMD_SET_ADDR(cmd.rdWr.addr, addr);
 		CMD_SET_LEN(cmd.rdWr.len, toRead);
 		if ((CmdSendLongRep(&cmd, sizeof(CmdRdWrHdr), &rep, readBuf + i,
-				toRead, TOUT_FAST) != toRead) || (rep->command != CMD_OK)) {
-			PrintErr("CMD response: %d. Couldn't read from cart!\n", rep->command);
-			if (rep) CmdRepFree(rep);
+				toRead, TOUT_FAST) != toRead) || (rep.command != CMD_OK)) {
+			PrintErr("CMD response: %d. Couldn't read from cart!\n", rep.command);
 			free(readBuf);
 			return NULL;
 		}
-		CmdRepFree(rep);
 		fflush(stdout);
 		// Update vars and draw progress bar
 		i += toRead;
@@ -540,7 +576,7 @@ uint8_t *AllocAndRamWrite(MemImage *f) {
     FILE *ram;
 	uint8_t *writeBuf;
 	Cmd cmd;
-	CmdRep *rep = NULL;
+	CmdRep rep;
 
 	// Check address and length are OK
 	if ((PROG_SRAM_BASE > f->addr) ||
@@ -582,13 +618,11 @@ uint8_t *AllocAndRamWrite(MemImage *f) {
 	CMD_SET_ADDR(cmd.rdWr.addr, f->addr - PROG_SRAM_BASE);
 	CMD_SET_LEN(cmd.rdWr.len, f->len);
 	if ((CmdSendLongCmd(&cmd, sizeof(CmdRdWrHdr), writeBuf, f->len,
-			&rep, TOUT_FAST) != f->len) || (rep->command != CMD_OK)) {
-		if (rep) CmdRepFree(rep);
+			&rep, TOUT_FAST) != f->len) || (rep.command != CMD_OK)) {
 		free(writeBuf);
 		PrintErr("Couldn't write to cart!\n");
 		return NULL;
 	}
-	CmdRepFree(rep);
 	printf("OK!\n");
 	return writeBuf;
 }
@@ -608,7 +642,7 @@ uint8_t *AllocAndRamWrite(MemImage *f) {
 uint8_t *AllocAndRamRead(MemImage *f) {
 	uint8_t *readBuf;
 	Cmd cmd;
-	CmdRep *rep = NULL;
+	CmdRep rep;
 
 	// Check address and length are OK
 	if ((PROG_SRAM_BASE > f->addr) ||
@@ -630,13 +664,11 @@ uint8_t *AllocAndRamRead(MemImage *f) {
 	CMD_SET_ADDR(cmd.rdWr.addr, f->addr - PROG_SRAM_BASE);
 	CMD_SET_LEN(cmd.rdWr.len, f->len);
 	if ((CmdSendLongRep(&cmd, sizeof(CmdRdWrHdr), &rep, readBuf, f->len,
-			TOUT_FAST) != f->len) || (rep->command != CMD_OK)) {
-		PrintErr("CMD response: %d. Couldn't read from cart!\n", rep->command);
-		if (rep) CmdRepFree(rep);
+			TOUT_FAST) != f->len) || (rep.command != CMD_OK)) {
+		PrintErr("CMD response: %d. Couldn't read from cart!\n", rep.command);
 		free(readBuf);
 		return NULL;
 	}
-	CmdRepFree(rep);
 	printf("OK!\n");
 	return readBuf;
 }
@@ -650,7 +682,7 @@ uint8_t *AllocAndRamRead(MemImage *f) {
  ****************************************************************************/
 int CmdMapperCfg(CmdMapper mapper) {
 	Cmd cmd;
-	CmdRep *rep = NULL;
+	CmdRep rep;
 
 	cmd.command = CMD_MAPPER_SET;
 	cmd.data[1] = mapper;
@@ -809,7 +841,7 @@ int main(int argc, char **argv){
 		puts(chipCic);
 		printf("%ld\n", mpsseIf);
 
-        while ((c = getopt_long(argc, argv, "fc:p:C:P:eEs:S:ViR:W:b:a:F:m:M:drvh", opt, &opIdx)) != -1)
+        while ((c = getopt_long(argc, argv, "fc:p:C:P:eEs:S:AViR:W:b:a:F:m:M:drvh", opt, &opIdx)) != -1)
         {
 			// Parse command-line options
             switch (c)
@@ -868,6 +900,10 @@ int main(int argc, char **argv){
 
 				case 'S': // Erase CHR flash sector
 	                prgSectErase = strtol( optarg, NULL, 16 );
+					break;
+
+				case 'A': // Auto erase
+					f.autoErase = TRUE;
 					break;
 
                 case 'V': // Verify flash write
@@ -962,8 +998,7 @@ int main(int argc, char **argv){
             }
         }
     }
-    else
-    {
+    else {
 		printf("Nothing to do!\n");
 		PrintHelp(argv[0]);
 		return 0;
@@ -974,6 +1009,27 @@ int main(int argc, char **argv){
 		for (i = optind; i < argc; i++) PrintErr(" %s", argv[i]);
 		PrintErr("\n\n");
 		PrintHelp(argv[0]);
+		return -1;
+	}
+
+	// Sanity checks
+	if (f.autoErase) {
+		if (!fCWr.file && !fPWr.file) {
+			PrintErr("Auto erase requested, but no image to flash!\n");
+			return -1;
+		}
+		if (f.chrErase || f.prgErase) {
+			PrintErr("Auto erase and full erase requested!\n");
+			return -1;
+		}
+		if ((chrSectErase != UINT32_MAX) || (prgSectErase != UINT32_MAX)) {
+			PrintErr("Auto erase and sector erase requested!\n");
+			return -1;
+		}
+	} // if (f.autoErase ...)
+	if ((f.chrErase && (chrSectErase != UINT32_MAX)) ||
+		(f.prgErase && (prgSectErase != UINT32_MAX))) {
+		PrintErr("Full erase and sector erase requested!\n");
 		return -1;
 	}
 
@@ -1008,16 +1064,20 @@ int main(int argc, char **argv){
 			printf(" - Read RAM to ");
 			PrintMemImage(&fRRd); putchar('\n');
 		}
-		if (f.chrErase) printf(" - Erase CHR Flash.\n");
-		else if (chrSectErase != UINT32_MAX) 
-			printf(" - Erase CHR sector at 0x%X.\n", chrSectErase);
-		if (f.prgErase) printf(" - Erase PRG Flash.\n");
-		else if (prgSectErase != UINT32_MAX) 
-			printf(" - Erase PRG sector at 0x%X.\n", prgSectErase);
-		if (fCWr.file) {
-		   printf(" - Flash CHR %s", f.verify?"and verify ":"");
-		   PrintMemImage(&fCWr); putchar('\n');
-		}
+		if (f.autoErase && (fCWr.file || fPWr.file)) {
+			printf(" - Auto erase\n");
+		} else {
+			if (f.chrErase) printf(" - Erase CHR Flash.\n");
+			else if (chrSectErase != UINT32_MAX) 
+				printf(" - Erase CHR sector at 0x%X.\n", chrSectErase);
+			if (f.prgErase) printf(" - Erase PRG Flash.\n");
+			else if (prgSectErase != UINT32_MAX) 
+				printf(" - Erase PRG sector at 0x%X.\n", prgSectErase);
+			if (fCWr.file) {
+			   printf(" - Flash CHR %s", f.verify?"and verify ":"");
+			   PrintMemImage(&fCWr); putchar('\n');
+			}
+		} // if (f.autoErase ...)
 		if (fCRd.file) {
 			printf(" - Read CHR ROM to ");
 			PrintMemImage(&fCRd); putchar('\n');
@@ -1196,7 +1256,7 @@ int main(int argc, char **argv){
 	}
 	// CHR Flash program
 	if (fCWr.file) {
-		chrWrBuf = AllocAndFlash(PROG_CHIP_CHR, &fCWr, cols);
+		chrWrBuf = AllocAndFlash(PROG_CHIP_CHR, &fCWr, f.autoErase, cols);
 		if (!chrWrBuf) {
 			errCode = 1;
 			goto dealloc_exit;
@@ -1249,7 +1309,7 @@ int main(int argc, char **argv){
 	}
 	// PRG Flash program
 	if (fPWr.file) {
-		prgWrBuf = AllocAndFlash(PROG_CHIP_PRG, &fPWr, cols);
+		prgWrBuf = AllocAndFlash(PROG_CHIP_PRG, &fPWr, f.autoErase, cols);
 		if (!prgWrBuf) {
 			errCode = 1;
 			goto dealloc_exit;

@@ -85,7 +85,7 @@ int CmdInit(unsigned int channel) {
  * \note This function does not allow sending or receiving commands with long
  * payloads. Use CmdSendLongCmd() or CmdSendLongRep() for long payloads.
  ****************************************************************************/
-int CmdSend(const Cmd *cmd, uint8_t cmdLen, CmdRep **rep, unsigned int tout) {
+int CmdSend(const Cmd *cmd, uint8_t cmdLen, CmdRep *rep, unsigned int tout) {
 	int ret;
 	int size;
 
@@ -103,7 +103,7 @@ int CmdSend(const Cmd *cmd, uint8_t cmdLen, CmdRep **rep, unsigned int tout) {
 
 	// Receive the reply to the command
     ret = libusb_bulk_transfer(hCmd, CMD_ENDPOINT_IN,
-			(*rep)->data, COMMAND_FRAME_BYTES, &size, tout);
+			rep->data, COMMAND_FRAME_BYTES, &size, tout);
 
     if ((ret != LIBUSB_SUCCESS) /*|| (size != COMMAND_FRAME_BYTES)*/) {
 		printf("Error: bulk transfer reply failed \n");
@@ -127,7 +127,7 @@ int CmdSend(const Cmd *cmd, uint8_t cmdLen, CmdRep **rep, unsigned int tout) {
  * \return CMD_OK if the command completed successfully. CMD_ERROR otherwise.
  ****************************************************************************/
 int CmdSendLongCmd(const Cmd *cmd, uint8_t cmdLen, const uint8_t *data,
-				   int dataLen, CmdRep **rep, unsigned int tout) {
+				   int dataLen, CmdRep *rep, unsigned int tout) {
 	int sent;
 	int ret;
 
@@ -159,7 +159,7 @@ int CmdSendLongCmd(const Cmd *cmd, uint8_t cmdLen, const uint8_t *data,
  *
  * \return Length of the received payload if OK, CMD_ERROR otherwise.
  ****************************************************************************/
-int CmdSendLongRep(const Cmd *cmd, uint8_t cmdLen, CmdRep **rep,
+int CmdSendLongRep(const Cmd *cmd, uint8_t cmdLen, CmdRep *rep,
 				   uint8_t *data, int recvLen, unsigned int tout) {
 	int ret;
 	int step;
