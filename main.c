@@ -170,6 +170,7 @@ const static char *description[] = {
 	"Erase PRG Flash",
 	"Erase CHR flash sector",
 	"Erase PRG flash sector",
+    "Auto erase flash",
 	"Verify flash after writing file",
 	"Obtain flash chips identifiers",
 	"Read data from RAM chip",
